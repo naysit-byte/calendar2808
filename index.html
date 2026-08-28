@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>สมุดนัด — สรุปตารางนัด Google Calendar</title>
+<meta name="theme-color" content="#1B2A41">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%231B2A41'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23B08D57' stroke-width='4'/%3E%3Ctext x='50' y='60' font-size='34' text-anchor='middle' fill='%23B08D57' font-family='serif'%3E法%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --navy:#1B2A41;
+    --navy-deep:#111C2C;
+    --ivory:#F3EFE6;
+    --ivory-dim:#E8E2D3;
+    --brass:#B08D57;
+    --brass-soft:#C9A876;
+    --red:#8B3A3A;
+    --line:rgba(176,141,87,0.28);
+    --ink:#2A2418;
+    --font-th:'Sarabun','Noto Serif Thai',serif;
+    --font-th-sans:'Sarabun','Noto Sans Thai',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--font-th-sans);
+    background:var(--ivory);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+
+  /* ---------- Header / stamp band ---------- */
+  header.topband{
+    background:linear-gradient(180deg,var(--navy) 0%,var(--navy-deep) 100%);
+    color:var(--ivory);
+    padding:22px 20px 20px;
+    position:relative;
+    overflow:hidden;
+  }
+  header.topband::after{
+    content:"";
+    position:absolute;
+    right:-40px; top:-40px;
+    width:180px;height:180px;
+    border:2px solid rgba(176,141,87,0.18);
+    border-radius:50%;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    position:relative;
+    z-index:1;
+  }
+  .brand .seal{
+    width:38px;height:38px;
+    border-radius:50%;
+    border:2px solid var(--brass);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-th);
+    font-size:15px;
+    color:var(--brass-soft);
+    flex-shrink:0;
+  }
+  .brand h1{
+    font-family:var(--font-th);
+    font-weight:700;
+    font-size:20px;
+    margin:0;
+    letter-spacing:0.02em;
+  }
+  .brand .tagline{
+    font-size:12px;
+    color:var(--brass-soft);
+    opacity:0.85;
+    margin-top:2px;
+  }
+  .datehead{
+    margin-top:16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:relative; z-index:1;
+  }
+  .datehead .range{
+    font-family:var(--font-th);
+    font-size:17px;
+    font-weight:700;
+  }
+  .datehead .subrange{
+    font-size:12px;
+    color:var(--brass-soft);
+    margin-top:2px;
+  }
+  .navbtns{display:flex;gap:6px;}
+  .navbtns button{
+    background:rgba(243,239,230,0.08);
+    border:1px solid var(--line);
+    color:var(--ivory);
+    width:34px;height:34px;
+    border-radius:8px;
+    font-size:15px;
+    cursor:pointer;
+  }
+  .navbtns button:active{background:rgba(176,141,87,0.35);}
+  .navbtns button:focus-visible{outline:2px solid var(--brass); outline-offset:2px;}
+
+  /* ---------- View toggle ---------- */
+  .viewtoggle{
+    display:flex;
+    margin:14px 20px 0;
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .viewtoggle button{
+    flex:1;
+    padding:10px 0;
+    background:var(--ivory);
+    border:none;
+    font-family:var(--font-th-sans);
+    font-size:14px;
+    font-weight:600;
+    color:var(--navy);
+    cursor:pointer;
+    border-right:1px solid var(--line);
+  }
+  .viewtoggle button:last-child{border-right:none;}
+  .viewtoggle button.active{
+    background:var(--navy);
+    color:var(--ivory);
+  }
+
+  /* ---------- Content ---------- */
+  main{padding:16px 20px 90px;}
+
+  .statusline{
+    font-size:12px;
+    color:#7a7260;
+    text-align:center;
+    margin:10px 0 4px;
+  }
+
+  .daycard{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .daycard .dhead{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 14px;
+    background:var(--ivory-dim);
+    border-bottom:1px solid var(--line);
+  }
+  .dhead .dnum{
+    font-family:var(--font-th);
+    font-size:20px;
+    font-weight:700;
+    color:var(--navy);
+    width:30px;
+    text-align:center;
+  }
+  .dhead .dmeta{flex:1;}
+  .dhead .dow{font-size:13px;font-weight:700;color:var(--navy);}
+  .dhead .dmonth{font-size:11px;color:#8a8270;}
+  .dhead .dcount{
+    font-size:11px;
+    color:var(--brass);
+    border:1px solid var(--brass);
+    border-radius:20px;
+    padding:2px 9px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .dhead.today .dnum{color:var(--red);}
+  .dhead.today{background:rgba(139,58,58,0.06);}
+
+  .elist{padding:4px 0;}
+  .evrow{
+    display:flex;
+    gap:12px;
+    padding:9px 14px;
+    border-bottom:1px solid rgba(176,141,87,0.14);
+  }
+  .evrow:last-child{border-bottom:none;}
+  .evrow .etime{
+    width:56px;
+    flex-shrink:0;
+    font-size:12px;
+    color:var(--navy);
+    font-weight:600;
+    padding-top:2px;
+  }
+  .evrow .etime .end{color:#9a9280;font-weight:400;display:block;}
+  .evrow .ebody{flex:1; min-width:0;}
+  .evrow .etitle{
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink);
+    line-height:1.35;
+  }
+  .evrow .eloc{
+    font-size:11.5px;
+    color:#8a8270;
+    margin-top:2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .evrow.soon{border-left:3px solid var(--red); padding-left:11px;}
+
+  .emptyday{
+    padding:16px 14px;
+    font-size:13px;
+    color:#a19b88;
+    font-style:italic;
+  }
+
+  /* Week compact rail (used above list on weekly view) */
+  .weekrail{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+    margin:14px 0 6px;
+  }
+  .wr-cell{
+    text-align:center;
+    padding:8px 2px;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:#fff;
+    cursor:default;
+  }
+  .wr-cell .wdow{font-size:10px;color:#9a9280;}
+  .wr-cell .wnum{font-family:var(--font-th);font-size:16px;font-weight:700;color:var(--navy);margin:2px 0;}
+  .wr-cell .wdot{
+    width:5px;height:5px;border-radius:50%;
+    background:var(--brass);
+    margin:0 auto;
+    visibility:hidden;
+  }
+  .wr-cell.has .wdot{visibility:visible;}
+  .wr-cell.today{border-color:var(--red); background:rgba(139,58,58,0.05);}
+  .wr-cell.today .wnum{color:var(--red);}
+
+  /* ---------- Empty / error / loading states ---------- */
+  .statecard{
+    text-align:center;
+    padding:40px 24px;
+    color:#6f6858;
+  }
+  .statecard .sc-icon{font-size:26px;margin-bottom:10px;}
+  .statecard h3{
+    font-family:var(--font-th);
+    font-size:16px;
+    color:var(--navy);
+    margin:0 0 6px;
+  }
+  .statecard p{font-size:13px;line-height:1.6;margin:0 0 14px;}
+  .statecard button{
+    background:var(--navy);
+    color:var(--ivory);
+    border:none;
+    padding:10px 22px;
+    border-radius:8px;
+    font-family:var(--font-th-sans);
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+  }
+
+  /* ---------- Bottom bar / settings ---------- */
+  .bottombar{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    background:var(--navy);
+    display:flex;
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+    gap:8px;
+    border-top:1px solid var(--line);
+  }
+  .bottombar button{
+    flex:1;
+    background:transparent;
+    border:1px solid rgba(176,141,87,0.4);
+    color:var(--ivory);
+    padding:11px 0;
+    border-radius:9px;
+    font-family:var(--font-th-sans);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .bottombar button.primary{
+    background:var(--brass);
+    border-color:var(--brass);
+    color:var(--navy-deep);
+  }
+  .bottombar button:focus-visible{outline:2px solid var(--ivory); outline-offset:2px;}
+
+  /* ---------- Settings modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(17,28,44,0.6);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:50;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    background:var(--ivory);
+    width:100%;
+    max-width:480px;
+    border-radius:16px 16px 0 0;
+    padding:20px 20px calc(20px + env(safe-area-inset-bottom));
+    max-height:85vh;
+    overflow-y:auto;
+  }
+  .modal h2{
+    font-family:var(--font-th);
+    font-size:17px;
+    color:var(--navy);
+    margin:0 0 4px;
+  }
+  .modal .modal-sub{font-size:12px;color:#8a8270;margin-bottom:16px;line-height:1.6;}
+  .modal label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--navy);
+    margin:14px 0 6px;
+  }
+  .modal input[type=text]{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    font-size:13px;
+    font-family:monospace;
+    background:#fff;
+  }
+  .modal .help{font-size:11.5px;color:#9a9280;margin-top:6px;line-height:1.6;}
+  .modal .help a{color:var(--brass); text-decoration:underline;}
+  .modal-actions{display:flex;gap:8px;margin-top:20px;}
+  .modal-actions button{
+    flex:1;padding:11px 0;border-radius:9px;font-size:13px;font-weight:600;
+    font-family:var(--font-th-sans); cursor:pointer; border:1px solid var(--line);
+    background:#fff; color:var(--navy);
+  }
+  .modal-actions button.primary{background:var(--navy); color:var(--ivory); border-color:var(--navy);}
+  .modal-close{
+    position:absolute; top:14px; right:16px;
+    background:none;border:none;font-size:20px;color:#9a9280;cursor:pointer;
+  }
+  .modal{position:relative;}
+
+  .signedcal{
+    display:flex; align-items:center; justify-content:space-between;
+    background:#fff; border:1px solid var(--line); border-radius:9px;
+    padding:10px 12px; margin-top:14px; font-size:12.5px;
+  }
+  .signedcal .status-dot{width:8px;height:8px;border-radius:50%;background:#4a8a5a;display:inline-block;margin-right:6px;}
+  .signedcal button{
+    background:none;border:none;color:var(--red);font-size:12px;font-weight:600;cursor:pointer;
+    text-decoration:underline;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topband">
+  <div class="brand">
+    <div class="seal">คด</div>
+    <div>
+      <h1>สมุดนัด</h1>
+      <div class="tagline">สรุปตารางนัดจาก Google Calendar</div>
+    </div>
+  </div>
+  <div class="datehead">
+    <div>
+      <div class="range" id="rangeLabel">—</div>
+      <div class="subrange" id="rangeSub"></div>
+    </div>
+    <div class="navbtns">
+      <button id="btnPrev" aria-label="ก่อนหน้า">‹</button>
+      <button id="btnToday" aria-label="วันนี้" style="font-size:11px;">วันนี้</button>
+      <button id="btnNext" aria-label="ถัดไป">›</button>
+    </div>
+  </div>
+</header>
+
+<div class="viewtoggle">
+  <button id="btnDaily" class="active">รายวัน</button>
+  <button id="btnWeekly">รายสัปดาห์</button>
+</div>
+
+<main id="main">
+  <div class="statecard" id="signedOutState">
+    <div class="sc-icon">🔏</div>
+    <h3>ยังไม่ได้เชื่อมต่อปฏิทิน</h3>
+    <p>เชื่อมต่อบัญชี Google Calendar เพื่อดึงตารางนัดมาสรุป ข้อมูลจะถูกดึงเฉพาะแบบอ่านอย่างเดียว (read-only)</p>
+    <button id="btnConnectMain">เชื่อมต่อ Google Calendar</button>
+  </div>
+  <div id="content" style="display:none;"></div>
+</main>
+
+<div class="bottombar">
+  <button id="btnRefresh">↻ ดึงข้อมูลใหม่</button>
+  <button id="btnSettings">⚙ ตั้งค่า</button>
+  <button id="btnConnect" class="primary">เชื่อมต่อ</button>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <button class="modal-close" id="modalClose" aria-label="ปิด">×</button>
+    <h2>ตั้งค่าการเชื่อมต่อ</h2>
+    <div class="modal-sub">แอปนี้ทำงานฝั่งเบราว์เซอร์ทั้งหมด ไม่มีเซิร์ฟเวอร์กลาง ต้องสร้าง OAuth Client ID ของตัวเองจาก Google Cloud Console เพื่อขออนุญาตอ่านปฏิทิน</div>
+
+    <label for="clientIdInput">Google OAuth Client ID</label>
+    <input type="text" id="clientIdInput" placeholder="xxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com">
+    <div class="help">
+      สร้างได้ที่ <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console → Credentials</a>
+      เลือก "OAuth client ID" ประเภท <b>Web application</b> แล้วเพิ่มโดเมนที่ใช้เปิดหน้านี้ใน "Authorized JavaScript origins" (เช่น ที่อยู่ GitHub Pages ของพี่) และเปิดใช้งาน <b>Google Calendar API</b> ในโปรเจกต์เดียวกัน
+    </div>
+
+    <div id="calSelectWrap" style="display:none;">
+      <label for="calSelect">ปฏิทินที่จะสรุป</label>
+      <select id="calSelect" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff;"></select>
+    </div>
+
+    <div class="signedcal" id="signedcalRow" style="display:none;">
+      <span><span class="status-dot"></span><span id="signedEmail"></span></span>
+      <button id="btnDisconnect">ยกเลิกการเชื่อมต่อ</button>
+    </div>
+
+    <div class="modal-actions">
+      <button id="modalCancel">ปิด</button>
+      <button id="modalSave" class="primary">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+(function(){
+  "use strict";
+
+  const SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+  const LS_CLIENT_ID = "calsum_client_id";
+  const LS_CAL_ID = "calsum_cal_id";
+  const LS_TOKEN = "calsum_token"; // {access_token, expires_at}
+  const LS_CACHE_PREFIX = "calsum_cache_";
+  const DOW_TH = ["อา","จ","อ","พ","พฤ","ศ","ส"];
+  const DOW_TH_FULL = ["วันอาทิตย์","วันจันทร์","วันอังคาร","วันพุธ","วันพฤหัสบดี","วันศุกร์","วันเสาร์"];
+  const MONTH_TH = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+
+  let state = {
+    view: "daily", // daily | weekly
+    anchor: startOfDay(new Date()),
+    tokenClient: null,
+    accessToken: null,
+    events: {}, // dateKey -> [events]
+    calendars: [],
+  };
+
+  // ---------- Utilities ----------
+  function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  function dateKey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function startOfWeek(d){ const x=startOfDay(d); const day=x.getDay(); return addDays(x,-day); }
+  function fmtTime(d){ return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+  function isSameDay(a,b){ return dateKey(a)===dateKey(b); }
+  function beDate(d){ return d.getFullYear()+543; }
+
+  function saveToken(tok){
+    localStorage.setItem(LS_TOKEN, JSON.stringify(tok));
+    state.accessToken = tok.access_token;
+  }
+  function loadToken(){
+    try{
+      const raw = localStorage.getItem(LS_TOKEN);
+      if(!raw) return null;
+      const tok = JSON.parse(raw);
+      if(tok.expires_at && Date.now() > tok.expires_at) return null;
+      return tok;
+    }catch(e){ return null; }
+  }
+  function clearToken(){
+    localStorage.removeItem(LS_TOKEN);
+    state.accessToken = null;
+  }
+
+  // ---------- Google Identity Services ----------
+  function initTokenClient(){
+    const clientId = localStorage.getItem(LS_CLIENT_ID);
+    if(!clientId || !window.google || !google.accounts) return;
+    state.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: SCOPE,
+      callback: (resp)=>{
+        if(resp.error){
+          showStateCard("error","เชื่อมต่อไม่สำเร็จ", "Google ปฏิเสธคำขอ ("+resp.error+") ลองตรวจสอบ Client ID และโดเมนที่อนุญาตในตั้งค่า");
+          return;
+        }
+        const expiresAt = Date.now() + (resp.expires_in*1000) - 60000;
+        saveToken({access_token:resp.access_token, expires_at:expiresAt});
+        onConnected();
+      }
+    });
+  }
+
+  function connect(){
+    const clientId = localStorage.getItem(LS_CLIENT_ID);
+    if(!clientId){
+      openModal();
+      return;
+    }
+    if(!state.tokenClient) initTokenClient();
+    if(!state.tokenClient){
+      showStateCard("error","โหลด Google Identity Services ไม่สำเร็จ","ลองรีเฟรชหน้านี้ หรือตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
+      return;
+    }
+    state.tokenClient.requestAccessToken({prompt: state.accessToken ? "" : "consent"});
+  }
+
+  function disconnect(){
+    const tok = loadToken();
+    if(tok && window.google && google.accounts){
+      google.accounts.oauth2.revoke(tok.access_token, ()=>{});
+    }
+    clearToken();
+    localStorage.removeItem(LS_CAL_ID);
+    updateConnectedUI(false);
+    document.getElementById("signedOutState").style.display="";
+    document.getElementById("content").style.display="none";
+    document.getElementById("signedcalRow").style.display="none";
+  }
+
+  function onConnected(){
+    updateConnectedUI(true);
+    document.getElementById("signedOutState").style.display="none";
+    document.getElementById("content").style.display="";
+    fetchCalendarList().then(()=>loadRange(true));
+  }
+
+  function updateConnectedUI(connected){
+    document.getElementById("btnConnect").textContent = connected ? "✓ เชื่อมต่อแล้ว" : "เชื่อมต่อ";
+  }
+
+  // ---------- Calendar API ----------
+  async function apiFetch(url){
+    const res = await fetch(url, {
+      headers:{ "Authorization":"Bearer "+state.accessToken }
+    });
+    if(res.status===401){
+      clearToken();
+      throw new Error("โทเคนหมดอายุ กรุณาเชื่อมต่อใหม่");
+    }
+    if(!res.ok){
+      const t = await res.text();
+      throw new Error("เรียกข้อมูลไม่สำเร็จ ("+res.status+")");
+    }
+    return res.json();
+  }
+
+  async function fetchCalendarList(){
+    try{
+      const data = await apiFetch("https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=freeBusyReader");
+      state.calendars = data.items || [];
+      const sel = document.getElementById("calSelect");
+      sel.innerHTML="";
+      state.calendars.forEach(c=>{
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = c.summaryOverride || c.summary + (c.primary ? " (หลัก)" : "");
+        sel.appendChild(opt);
+      });
+      const saved = localStorage.getItem(LS_CAL_ID);
+      if(saved && state.calendars.some(c=>c.id===saved)) sel.value = saved;
+      document.getElementById("calSelectWrap").style.display="";
+      const primary = state.calendars.find(c=>c.primary);
+      const email = document.getElementById("signedEmail");
+      email.textContent = primary ? primary.id : "เชื่อมต่อแล้ว";
+      document.getElementById("signedcalRow").style.display="flex";
+    }catch(e){ /* non-fatal */ }
+  }
+
+  function activeCalendarId(){
+    return localStorage.getItem(LS_CAL_ID) || "primary";
+  }
+
+  async function fetchEvents(timeMin, timeMax){
+    const calId = encodeURIComponent(activeCalendarId());
+    const url = "https://www.googleapis.com/calendar/v3/calendars/"+calId+"/events"
+      + "?timeMin="+encodeURIComponent(timeMin.toISOString())
+      + "&timeMax="+encodeURIComponent(timeMax.toISOString())
+      + "&singleEvents=true&orderBy=startTime&maxResults=100";
+    const data = await apiFetch(url);
+    return data.items || [];
+  }
+
+  // ---------- Cache ----------
+  function cacheKey(rangeStart, rangeEnd){
+    return LS_CACHE_PREFIX + activeCalendarId() + "_" + dateKey(rangeStart) + "_" + dateKey(rangeEnd);
+  }
+  function readCache(key){
+    try{
+      const raw = localStorage.getItem(key);
+      if(!raw) return null;
+      return JSON.parse(raw);
+    }catch(e){ return null; }
+  }
+  function writeCache(key, items){
+    try{ localStorage.setItem(key, JSON.stringify({items, cachedAt:Date.now()})); }catch(e){}
+  }
+
+  // ---------- Data loading ----------
+  async function loadRange(forceFresh){
+    if(!state.accessToken){ state.accessToken = (loadToken()||{}).access_token; }
+    if(!state.accessToken){
+      document.getElementById("signedOutState").style.display="";
+      document.getElementById("content").style.display="none";
+      return;
+    }
+    let rangeStart, rangeEnd;
+    if(state.view==="daily"){
+      rangeStart = state.anchor;
+      rangeEnd = addDays(state.anchor,1);
+    } else {
+      rangeStart = startOfWeek(state.anchor);
+      rangeEnd = addDays(rangeStart,7);
+    }
+    renderHeader(rangeStart, rangeEnd);
+
+    const ck = cacheKey(rangeStart, rangeEnd);
+    let items = null;
+    const cached = readCache(ck);
+    if(cached && !forceFresh){
+      items = cached.items;
+      renderStatus("โหลดจากแคชล่าสุด");
+      renderEvents(items, rangeStart, rangeEnd);
+    } else {
+      renderStatus("กำลังดึงข้อมูล…");
+    }
+
+    try{
+      const fresh = await fetchEvents(rangeStart, rangeEnd);
+      writeCache(ck, fresh);
+      renderStatus("อัปเดตล่าสุด " + new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));
+      renderEvents(fresh, rangeStart, rangeEnd);
+    }catch(e){
+      if(items){
+        renderStatus("ดึงข้อมูลใหม่ไม่สำเร็จ — แสดงข้อมูลจากแคช (" + e.message + ")");
+      } else {
+        showStateCard("error","ดึงตารางนัดไม่สำเร็จ", e.message);
+      }
+    }
+  }
+
+  function renderStatus(text){
+    let el = document.getElementById("statusline");
+    if(!el){
+      el = document.createElement("div");
+      el.id="statusline";
+      el.className="statusline";
+    }
+    el.textContent = text;
+    const content = document.getElementById("content");
+    if(content.firstChild!==el) content.insertBefore(el, content.firstChild);
+  }
+
+  function renderHeader(rangeStart, rangeEnd){
+    const label = document.getElementById("rangeLabel");
+    const sub = document.getElementById("rangeSub");
+    if(state.view==="daily"){
+      label.textContent = DOW_TH_FULL[rangeStart.getDay()] + " ที่ " + rangeStart.getDate() + " " + MONTH_TH[rangeStart.getMonth()] + " " + beDate(rangeStart);
+      sub.textContent = "มุมมองรายวัน";
+    } else {
+      const last = addDays(rangeEnd,-1);
+      label.textContent = rangeStart.getDate()+" "+MONTH_TH[rangeStart.getMonth()]+" – "+last.getDate()+" "+MONTH_TH[last.getMonth()]+" "+beDate(last);
+      sub.textContent = "สัปดาห์ที่ "+isoWeekNo(rangeStart);
+    }
+  }
+
+  function isoWeekNo(d){
+    const t = new Date(d.getFullYear(),0,1);
+    return Math.ceil((((d - t) / 86400000) + t.getDay()+1)/7);
+  }
+
+  function groupByDay(events, rangeStart, numDays){
+    const map = {};
+    for(let i=0;i<numDays;i++){ map[dateKey(addDays(rangeStart,i))] = []; }
+    events.forEach(ev=>{
+      const startStr = ev.start.dateTime || ev.start.date;
+      const start = new Date(startStr);
+      const key = dateKey(start);
+      if(map[key]) map[key].push(ev);
+    });
+    return map;
+  }
+
+  function renderEvents(events, rangeStart, rangeEnd){
+    const content = document.getElementById("content");
+    const numDays = state.view==="daily" ? 1 : 7;
+    const grouped = groupByDay(events, rangeStart, numDays);
+
+    // clear all but status line
+    Array.from(content.children).forEach(c=>{ if(c.id!=="statusline") c.remove(); });
+
+    if(state.view==="weekly"){
+      content.appendChild(buildWeekRail(rangeStart, grouped));
+    }
+
+    const totalCount = events.length;
+    if(totalCount===0){
+      const empty = document.createElement("div");
+      empty.className="statecard";
+      empty.innerHTML = '<div class="sc-icon">📭</div><h3>ไม่มีนัดในช่วงนี้</h3><p>ไม่พบนัดหมายใน'+(state.view==="daily"?"วันนี้":"สัปดาห์นี้")+'จากปฏิทินที่เลือก</p>';
+      content.appendChild(empty);
+      return;
+    }
+
+    for(let i=0;i<numDays;i++){
+      const d = addDays(rangeStart,i);
+      const key = dateKey(d);
+      const dayEvents = grouped[key] || [];
+      content.appendChild(buildDayCard(d, dayEvents));
+    }
+  }
+
+  function buildWeekRail(rangeStart, grouped){
+    const rail = document.createElement("div");
+    rail.className="weekrail";
+    const today = startOfDay(new Date());
+    for(let i=0;i<7;i++){
+      const d = addDays(rangeStart,i);
+      const cell = document.createElement("div");
+      const has = (grouped[dateKey(d)]||[]).length>0;
+      cell.className = "wr-cell" + (has?" has":"") + (isSameDay(d,today)?" today":"");
+      cell.innerHTML = '<div class="wdow">'+DOW_TH[d.getDay()]+'</div><div class="wnum">'+d.getDate()+'</div><div class="wdot"></div>';
+      rail.appendChild(cell);
+    }
+    return rail;
+  }
+
+  function buildDayCard(d, events){
+    const card = document.createElement("div");
+    card.className="daycard";
+    const today = startOfDay(new Date());
+    const isToday = isSameDay(d,today);
+
+    const head = document.createElement("div");
+    head.className="dhead"+(isToday?" today":"");
+    head.innerHTML =
+      '<div class="dnum">'+d.getDate()+'</div>'+
+      '<div class="dmeta"><div class="dow">'+DOW_TH_FULL[d.getDay()]+(isToday?" · วันนี้":"")+'</div><div class="dmonth">'+MONTH_TH[d.getMonth()]+" "+beDate(d)+'</div></div>'+
+      '<div class="dcount">'+events.length+' นัด</div>';
+    card.appendChild(head);
+
+    const list = document.createElement("div");
+    list.className="elist";
+
+    if(events.length===0){
+      const e = document.createElement("div");
+      e.className="emptyday";
+      e.textContent="ไม่มีนัดในวันนี้";
+      list.appendChild(e);
+    } else {
+      const now = new Date();
+      events.forEach(ev=>{
+        const row = document.createElement("div");
+        const startAll = !ev.start.dateTime;
+        const start = new Date(ev.start.dateTime || ev.start.date);
+        const end = new Date(ev.end.dateTime || ev.end.date);
+        const soon = !startAll && start>now && (start-now) < 3600000 && isToday;
+        row.className = "evrow" + (soon?" soon":"");
+        const timeHtml = startAll
+          ? '<span>ทั้งวัน</span>'
+          : '<span>'+fmtTime(start)+'</span><span class="end">'+fmtTime(end)+'</span>';
+        row.innerHTML =
+          '<div class="etime">'+timeHtml+'</div>'+
+          '<div class="ebody"><div class="etitle">'+escapeHtml(ev.summary||"(ไม่มีชื่อเรื่อง)")+'</div>'+
+          (ev.location ? '<div class="eloc">📍 '+escapeHtml(ev.location)+'</div>' : '')+
+          '</div>';
+        list.appendChild(row);
+      });
+    }
+    card.appendChild(list);
+    return card;
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function showStateCard(kind, title, msg){
+    const content = document.getElementById("content");
+    content.style.display="";
+    document.getElementById("signedOutState").style.display="none";
+    Array.from(content.children).forEach(c=>c.remove());
+    const card = document.createElement("div");
+    card.className="statecard";
+    card.innerHTML = '<div class="sc-icon">'+(kind==="error"?"⚠️":"📭")+'</div><h3>'+title+'</h3><p>'+escapeHtml(msg)+'</p>'
+      + '<button id="scRetry">ลองใหม่</button>';
+    content.appendChild(card);
+    document.getElementById("scRetry").onclick = ()=>loadRange(true);
+  }
+
+  // ---------- Modal ----------
+  function openModal(){
+    document.getElementById("clientIdInput").value = localStorage.getItem(LS_CLIENT_ID) || "";
+    document.getElementById("modalBackdrop").classList.add("open");
+    if(state.accessToken) fetchCalendarList();
+  }
+  function closeModal(){ document.getElementById("modalBackdrop").classList.remove("open"); }
+
+  function saveSettings(){
+    const val = document.getElementById("clientIdInput").value.trim();
+    if(val) localStorage.setItem(LS_CLIENT_ID, val);
+    const calSel = document.getElementById("calSelect");
+    if(calSel && calSel.value) localStorage.setItem(LS_CAL_ID, calSel.value);
+    initTokenClient();
+    closeModal();
+    if(state.accessToken) loadRange(true);
+  }
+
+  // ---------- Wiring ----------
+  document.getElementById("btnConnectMain").onclick = connect;
+  document.getElementById("btnConnect").onclick = connect;
+  document.getElementById("btnSettings").onclick = openModal;
+  document.getElementById("modalClose").onclick = closeModal;
+  document.getElementById("modalCancel").onclick = closeModal;
+  document.getElementById("modalSave").onclick = saveSettings;
+  document.getElementById("btnDisconnect").onclick = ()=>{ closeModal(); disconnect(); };
+  document.getElementById("btnRefresh").onclick = ()=>loadRange(true);
+
+  document.getElementById("btnPrev").onclick = ()=>{
+    state.anchor = addDays(state.anchor, state.view==="daily"?-1:-7);
+    loadRange(false);
+  };
+  document.getElementById("btnNext").onclick = ()=>{
+    state.anchor = addDays(state.anchor, state.view==="daily"?1:7);
+    loadRange(false);
+  };
+  document.getElementById("btnToday").onclick = ()=>{
+    state.anchor = startOfDay(new Date());
+    loadRange(false);
+  };
+  document.getElementById("btnDaily").onclick = ()=>{
+    state.view="daily";
+    document.getElementById("btnDaily").classList.add("active");
+    document.getElementById("btnWeekly").classList.remove("active");
+    loadRange(false);
+  };
+  document.getElementById("btnWeekly").onclick = ()=>{
+    state.view="weekly";
+    document.getElementById("btnWeekly").classList.add("active");
+    document.getElementById("btnDaily").classList.remove("active");
+    loadRange(false);
+  };
+
+  // ---------- Init ----------
+  window.addEventListener("load", ()=>{
+    const tok = loadToken();
+    if(tok){
+      state.accessToken = tok.access_token;
+      updateConnectedUI(true);
+      document.getElementById("signedOutState").style.display="none";
+      document.getElementById("content").style.display="";
+      // wait a tick for GIS script to be ready before we might need it (e.g. disconnect/revoke)
+      setTimeout(()=>{ initTokenClient(); fetchCalendarList(); loadRange(false); }, 300);
+    } else {
+      renderHeader(state.anchor, addDays(state.anchor,1));
+      setTimeout(initTokenClient, 300);
+    }
+  });
+
+  // ---------- PWA: manifest + service worker via Blob (single-file install) ----------
+  try{
+    const manifest = {
+      name: "สมุดนัด — สรุปตารางนัด",
+      short_name: "สมุดนัด",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#F3EFE6",
+      theme_color: "#1B2A41",
+      icons: [{
+        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%231B2A41'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23B08D57' stroke-width='4'/%3E%3Ctext x='50' y='60' font-size='34' text-anchor='middle' fill='%23B08D57' font-family='serif'%3E%E0%B8%84%E0%B8%94%3C/text%3E%3C/svg%3E",
+        sizes:"100x100", type:"image/svg+xml", purpose:"any maskable"
+      }]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], {type:"application/json"});
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const link = document.createElement("link");
+    link.rel="manifest";
+    link.href=manifestUrl;
+    document.head.appendChild(link);
+  }catch(e){}
+  if("serviceWorker" in navigator){
+    try{
+      const swCode = "self.addEventListener('fetch', function(e){}); self.addEventListener('install', function(e){self.skipWaiting();}); self.addEventListener('activate', function(e){self.clients.claim();});";
+      const swBlob = new Blob([swCode], {type:"application/javascript"});
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(function(){});
+    }catch(e){}
+  }
+})();
+</script>
+</body>
+</html>
